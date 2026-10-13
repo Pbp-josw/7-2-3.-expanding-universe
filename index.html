@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>팽창하는 우주 - 풍선 모형 시뮬레이션 | 중학교 3학년 과학</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070a13;
+      --card-bg: rgba(18, 25, 44, 0.78);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --accent-cyan: #00f0ff;
+      --accent-purple: #a855f7;
+      --accent-yellow: #fbbf24;
+      --accent-rose: #f43f5e;
+      --accent-green: #10b981;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    header {
+      padding: 1rem 1.75rem;
+      border-bottom: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      background: rgba(8, 12, 22, 0.85);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      padding: 0.2rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 40%, var(--accent-cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .sub-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .ufo-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(168, 85, 247, 0.15);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.6rem;
+      font-size: 0.75rem;
+      color: #d8b4fe;
+    }
+
+    .main-container {
+      max-width: 1440px;
+      margin: 1.25rem auto;
+      padding: 0 1.25rem 2rem;
+      display: grid;
+      grid-template-columns: 1fr 450px;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 1080px) {
+      .main-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Simulation Canvas Stage */
+    .sim-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      box-shadow: 0 20px 45px -15px rgba(0,0,0,0.6);
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sim-toolbar {
+      padding: 0.75rem 1.25rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .view-selector {
+      display: flex;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 0.25rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--card-border);
+      gap: 0.25rem;
+      flex-wrap: wrap;
+    }
+
+    .view-btn {
+      padding: 0.35rem 0.7rem;
+      border-radius: 0.5rem;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .view-btn:hover {
+      color: #fff;
+    }
+
+    .view-btn.active {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      flex: 1;
+      min-height: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #030611;
+    }
+
+    canvas {
+      display: block;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    canvas:active {
+      cursor: grabbing;
+    }
+
+    .canvas-overlay-tip {
+      position: absolute;
+      bottom: 0.85rem;
+      left: 0.85rem;
+      background: rgba(7, 10, 19, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.6rem;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* Simulation Controls */
+    .sim-controls {
+      padding: 1.15rem 1.25rem;
+      background: rgba(12, 17, 32, 0.8);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+    }
+
+    .slider-label {
+      font-size: 0.83rem;
+      font-weight: 700;
+      min-width: 90px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .range-slider {
+      flex: 1;
+      height: 8px;
+      border-radius: 4px;
+      background: #1e293b;
+      outline: none;
+      -webkit-appearance: none;
+      accent-color: var(--accent-cyan);
+      cursor: pointer;
+    }
+
+    .range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 12px var(--accent-cyan);
+      border: 3px solid var(--accent-cyan);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .range-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    .step-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .action-btn {
+      padding: 0.7rem 0.9rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.83rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      transition: all 0.25s ease;
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .action-btn.active-step {
+      border-color: var(--accent-cyan);
+      background: rgba(0, 240, 255, 0.15);
+      color: var(--accent-cyan);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+    }
+
+    /* Right Side: Data & Education Panel */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      padding: 1.2rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #fff;
+    }
+
+    .card-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.2rem 0.55rem;
+      border-radius: 0.4rem;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+    }
+
+    /* Distance Table */
+    .table-container {
+      width: 100%;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.76rem;
+      text-align: center;
+    }
+
+    thead {
+      background: rgba(0, 0, 0, 0.45);
+    }
+
+    th {
+      padding: 0.6rem 0.35rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--card-border);
+      line-height: 1.3;
+    }
+
+    td {
+      padding: 0.55rem 0.35rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #e2e8f0;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .highlight-val {
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      color: var(--accent-cyan);
+    }
+
+    .diff-badge {
+      display: inline-block;
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.35rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .legend-row {
+      display: flex;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    /* Conclusion Logic Guide Card */
+    .logic-step {
+      display: flex;
+      gap: 0.6rem;
+      margin-bottom: 0.6rem;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.6rem;
+      border-left: 3px solid var(--accent-cyan);
+      font-size: 0.78rem;
+    }
+
+    .logic-step-num {
+      font-weight: 800;
+      color: var(--accent-cyan);
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .logic-step-content {
+      color: #cbd5e1;
+      line-height: 1.4;
+    }
+
+    .logic-step-content strong {
+      color: #fff;
+    }
+
+    /* UFO Toast Message */
+    .ufo-toast {
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #c084fc;
+      box-shadow: 0 0 20px rgba(192, 132, 252, 0.35);
+      color: #f3e8ff;
+      padding: 0.4rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .ufo-toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <div class="logo-badge">중학교 3학년 2학기 과학 탐구</div>
+      <h1>7-2-3. 팽창하는 우주 (풍선 모형 시뮬레이션)</h1>
+      <div class="sub-title">풍선 표면의 3개 붙임딱지 간 거리 측정 및 우주 배경 팽창 관측</div>
+    </div>
+    <div class="ufo-status-badge" id="ufoBadge">
+      <span>🛸 외계인 탐사선:</span>
+      <span id="ufoReadyText" style="color:#4ade80; font-weight:700;">준비 완료 (탭/클릭)</span>
+    </div>
+  </header>
+
+  <div class="main-container">
+    
+    <!-- LEFT: Simulation Canvas & Controls -->
+    <div class="sim-panel">
+      
+      <!-- Toolbar -->
+      <div class="sim-toolbar">
+        <div style="font-size: 0.82rem; font-weight: 700; color: #fff;">
+          관측 기준점:
+        </div>
+        <div class="view-selector">
+          <button class="view-btn active" id="viewCenterBtn" onclick="changeObserver('center')">
+            🌐 전체 시점 (풍선 중심)
+          </button>
+          <button class="view-btn" id="viewABtn" onclick="changeObserver('A')">
+            🔴 (가) 기준
+          </button>
+          <button class="view-btn" id="viewBBtn" onclick="changeObserver('B')">
+            🟡 (나) 기준
+          </button>
+          <button class="view-btn" id="viewCBtn" onclick="changeObserver('C')">
+            🔵 (다) 기준
+          </button>
+        </div>
+      </div>
+
+      <!-- Canvas Area -->
+      <div class="canvas-wrapper" id="canvasContainer">
+        <canvas id="balloonCanvas"></canvas>
+        <div class="ufo-toast" id="ufoToast">🛸 삐리삐리! 외계 탐사선이 은하에 도착했습니다!</div>
+        <div class="canvas-overlay-tip">
+          💡 안내: 태블릿에서 은하를 터치하면 <strong>외계인 우주선(🛸)</strong>이 날아옵니다 (5초 쿨타임). 드래그하여 위치도 바꿀 수 있습니다.
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="sim-controls">
+        
+        <div class="slider-row">
+          <div class="slider-label">
+            🎈 풍선 팽창: <span id="radiusVal" class="highlight-val" style="margin-left: 0.25rem;">1.00x</span>
+          </div>
+          <input type="range" class="range-slider" id="radiusSlider" min="1.0" max="2.3" step="0.01" value="1.0">
+        </div>
+
+        <div class="step-buttons">
+          <button class="action-btn active-step" id="stepSmallBtn" onclick="setStep('small')">
+            <span>🔹 1단계: 풍선 작게 불기 (초기)</span>
+          </button>
+          <button class="action-btn" id="stepBigBtn" onclick="setStep('big')">
+            <span>💨 2단계: 풍선 크게 불기 (팽창)</span>
+          </button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.15rem;">
+          <div class="legend-row">
+            <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span>(가) 은하</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#eab308;"></span>(나) 은하</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#3b82f6;"></span>(다) 은하</div>
+          </div>
+          <button class="action-btn" style="padding: 0.35rem 0.8rem; font-size: 0.74rem;" onclick="resetSimulation()">
+            🔄 위치 초기화
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Data Table & 3 Pairs Measurements -->
+    <div class="side-panel">
+      
+      <!-- Table: Investigation Results for ALL 3 PAIRS -->
+      <div class="glass-card">
+        <div class="card-title">
+          <span>📊 탐구 결과: 3개 쌍 전체 거리 측정표</span>
+          <span class="card-badge" id="stateBadge">풍선 작을 때</span>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>측정 대상<br>(은하 쌍)</th>
+                <th>① 가까움<br><span style="color:#ef4444;">(가)</span> - <span style="color:#eab308;">(나)</span></th>
+                <th>② 중간 거리<br><span style="color:#eab308;">(나)</span> - <span style="color:#3b82f6;">(다)</span></th>
+                <th>③ 가장 멂<br><span style="color:#ef4444;">(가)</span> - <span style="color:#3b82f6;">(다)</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight: 600;">풍선이 작을 때 (cm)</td>
+                <td id="distAB_small" class="highlight-val">-</td>
+                <td id="distBC_small" class="highlight-val">-</td>
+                <td id="distAC_small" class="highlight-val">-</td>
+              </tr>
+              <tr>
+                <td style="font-weight: 600;">풍선이 클 때 (cm)</td>
+                <td id="distAB_big" class="highlight-val">-</td>
+                <td id="distBC_big" class="highlight-val">-</td>
+                <td id="distAC_big" class="highlight-val">-</td>
+              </tr>
+              <tr style="background: rgba(0, 240, 255, 0.05);">
+                <td style="font-weight: 700; color: var(--accent-cyan);">늘어난 거리<br>(클 때 - 작을 때)</td>
+                <td id="diffAB"><span class="diff-badge">-</span></td>
+                <td id="diffBC"><span class="diff-badge">-</span></td>
+                <td id="diffAC"><span class="diff-badge">-</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top: 0.75rem; font-size: 0.76rem; color: var(--text-muted); line-height: 1.45;">
+          * 풍선 표면의 <strong>(가)-(나), (나)-(다), (가)-(다)</strong> 3가지 곡면 거리가 실시간으로 측정됩니다.<br>
+          * <strong>발견 핵심:</strong> 처음 거리가 가장 멀었던 <span style="color:#38bdf8; font-weight:700;">(가)-(다)</span>의 늘어난 거리가 가장 큽니다!
+        </div>
+      </div>
+
+      <!-- Logic Step Connection Card -->
+      <div class="glass-card">
+        <div class="card-title">
+          <span>🧠 탐구 결론 4단계 사고 사다리</span>
+          <span class="card-badge" style="color:#a855f7; border-color:rgba(168,85,247,0.3);">허블 법칙 유도</span>
+        </div>
+
+        <div class="logic-step">
+          <div class="logic-step-num">1)</div>
+          <div class="logic-step-content">
+            풍선이 커지는 동안 각 붙임딱지 쌍은 <strong>(동일한 시간 동안)</strong> 함께 변한다.
+          </div>
+        </div>
+
+        <div class="logic-step">
+          <div class="logic-step-num">2)</div>
+          <div class="logic-step-content">
+            붙임딱지 쌍의 처음 거리가 멀수록 풍선이 커진 후 늘어난 거리는 더 <strong>(크다)</strong>.
+          </div>
+        </div>
+
+        <div class="logic-step">
+          <div class="logic-step-num">3)</div>
+          <div class="logic-step-content">
+            처음 거리가 먼 붙임딱지일수록 같은 시간 동안 거리가 더 <strong>(많이)</strong> 늘어난다.
+          </div>
+        </div>
+
+        <div class="logic-step">
+          <div class="logic-step-num">4)</div>
+          <div class="logic-step-content">
+            따라서 나에게서 멀리 있는 은하일수록 멀어지는 속도가 더 <strong>(빠르다)</strong>!
+          </div>
+        </div>
+      </div>
+
+      <!-- Background Explanation -->
+      <div class="glass-card">
+        <div class="card-title">
+          <span>🌌 배경 우주 팽창 효과</span>
+        </div>
+        <div style="font-size: 0.77rem; color: var(--text-muted); line-height: 1.45;">
+          배경의 수많은 미니 은하들과 별들이 중심에서 바깥으로 서서히 멀어지며 실제 우주 공간의 팽창을 보여줍니다. 풍선 표면의 2차원 모형뿐만 아니라 <strong>3차원 공간 전체가 팽창</strong>하고 있음을 함께 관찰해 보세요.
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // --- Canvas & Simulation State ---
+    const canvas = document.getElementById('balloonCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasContainer = document.getElementById('canvasContainer');
+
+    let balloonScale = 1.0; // 1.0 (작은 풍선) ~ 2.0 (큰 풍선)
+    const baseRadius = 135; 
+    let observer = 'center'; // 'center', 'A', 'B', 'C'
+
+    // 3 Stickers on Balloon
+    let stickers = [
+      { id: 'A', name: '(가)', color: '#ef4444', angle: -2.35, rRatio: 0.65 }, // 좌상단
+      { id: 'B', name: '(나)', color: '#eab308', angle: -1.35, rRatio: 0.55 }, // 상단 (A와 가까움)
+      { id: 'C', name: '(다)', color: '#3b82f6', angle: 0.85, rRatio: 0.78 }   // 우하단 (A와 가장 멂, B와 중간)
+    ];
+
+    // Dragging state
+    let draggedSticker = null;
+    let isDragging = false;
+
+    // Measurement Records for small balloon
+    let recordedSmall = {
+      AB: null,
+      BC: null,
+      AC: null
+    };
+
+    // --- Background Expanding Universe Simulation (Stars & Galaxies) ---
+    const NUM_STARS = 120;
+    const NUM_GALAXIES = 16;
+    let bgStars = [];
+    let bgGalaxies = [];
+
+    function initBackgroundSpace() {
+      bgStars = [];
+      for (let i = 0; i < NUM_STARS; i++) {
+        bgStars.push(createSpaceParticle(true));
+      }
+      bgGalaxies = [];
+      for (let i = 0; i < NUM_GALAXIES; i++) {
+        bgGalaxies.push(createSpaceGalaxy(true));
+      }
+    }
+
+    function createSpaceParticle(randomDist = false) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = randomDist ? Math.random() * 650 + 20 : Math.random() * 60 + 10;
+      return {
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist,
+        angle: angle,
+        dist: dist,
+        baseSpeed: 0.25 + Math.random() * 0.45,
+        size: Math.random() * 1.8 + 0.6,
+        alpha: Math.random() * 0.7 + 0.3
+      };
+    }
+
+    function createSpaceGalaxy(randomDist = false) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = randomDist ? Math.random() * 700 + 40 : Math.random() * 80 + 20;
+      const colors = ['#60a5fa', '#c084fc', '#f472b6', '#38bdf8', '#fbbf24'];
+      return {
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist,
+        angle: angle,
+        dist: dist,
+        baseSpeed: 0.2 + Math.random() * 0.35,
+        radius: Math.random() * 12 + 8,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.02
+      };
+    }
+
+    function updateAndDrawBackground(cw, ch) {
+      const cx = cw / 2;
+      const cy = ch / 2;
+
+      // 1. Draw Deep Space Stars (Hubble Expansion: v = H * r)
+      for (let s of bgStars) {
+        // 거리 r에 비례하여 멀어지는 우주 팽창 속도!
+        const hubbleV = (s.dist * 0.0022 + 0.15) * s.baseSpeed;
+        s.dist += hubbleV;
+        s.x = Math.cos(s.angle) * s.dist;
+        s.y = Math.sin(s.angle) * s.dist;
+
+        // Reset if moved beyond screen
+        const maxDist = Math.hypot(cw, ch) * 0.65;
+        if (s.dist > maxDist) {
+          Object.assign(s, createSpaceParticle(false));
+        }
+
+        const screenX = cx + s.x;
+        const screenY = cy + s.y;
+
+        // Draw star
+        const brightness = Math.min(1, s.dist / 80) * s.alpha;
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, s.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(226, 232, 240, ${brightness.toFixed(2)})`;
+        ctx.fill();
+      }
+
+      // 2. Draw Distant Expanding Spiral Galaxies
+      for (let g of bgGalaxies) {
+        const hubbleV = (g.dist * 0.002 + 0.12) * g.baseSpeed;
+        g.dist += hubbleV;
+        g.x = Math.cos(g.angle) * g.dist;
+        g.y = Math.sin(g.angle) * g.dist;
+        g.rotation += g.rotSpeed;
+
+        const maxDist = Math.hypot(cw, ch) * 0.7;
+        if (g.dist > maxDist) {
+          Object.assign(g, createSpaceGalaxy(false));
+        }
+
+        const screenX = cx + g.x;
+        const screenY = cy + g.y;
+
+        // Draw miniature distant spiral galaxy
+        const fade = Math.min(0.65, g.dist / 120);
+        ctx.save();
+        ctx.translate(screenX, screenY);
+        ctx.rotate(g.rotation);
+        
+        // Elliptical core
+        ctx.beginPath();
+        ctx.ellipse(0, 0, g.radius, g.radius * 0.45, 0, 0, Math.PI * 2);
+        ctx.fillStyle = g.color;
+        ctx.globalAlpha = fade * 0.4;
+        ctx.fill();
+
+        // Spiral arms glow
+        ctx.beginPath();
+        ctx.arc(0, 0, g.radius * 0.25, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = fade * 0.75;
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    // --- Alien UFO Interactive Feature (Cooldown 5s) ---
+    let lastUfoTime = 0;
+    const UFO_COOLDOWN_MS = 5000;
+    let activeUfo = null; // UFO animation object
+
+    function triggerUfoAt(targetX, targetY, targetName) {
+      const now = performance.now();
+      if (now - lastUfoTime < UFO_COOLDOWN_MS) {
+        // Cooldown remaining
+        const remainSec = Math.ceil((UFO_COOLDOWN_MS - (now - lastUfoTime)) / 1000);
+        showToast(`⏳ 우주선 충전 중... (${remainSec}초 후 호출 가능)`);
+        return;
+      }
+
+      lastUfoTime = now;
+      updateUfoCooldownUI();
+
+      // Launch UFO from outside canvas to target
+      const startX = targetX > canvas.width / 2 ? -80 : canvas.width + 80;
+      const startY = targetY - 120;
+
+      activeUfo = {
+        startX: startX,
+        startY: startY,
+        targetX: targetX,
+        targetY: targetY - 45, // Hover above sticker
+        currentX: startX,
+        currentY: startY,
+        startTime: now,
+        duration: 3200, // Total flight sequence
+        targetName: targetName,
+        sayText: `🛸 삐리삐리! [${targetName}] 은하 탐사 완료!`
+      };
+
+      showToast(`🛸 외계인 우주선이 [${targetName}] 은하로 출동합니다!`);
+    }
+
+    function updateUfoCooldownUI() {
+      const now = performance.now();
+      const diff = now - lastUfoTime;
+      const readyText = document.getElementById('ufoReadyText');
+      if (diff >= UFO_COOLDOWN_MS) {
+        readyText.textContent = '준비 완료 (탭/클릭)';
+        readyText.style.color = '#4ade80';
+      } else {
+        const remain = Math.ceil((UFO_COOLDOWN_MS - diff) / 1000);
+        readyText.textContent = `충전 중 (${remain}초)`;
+        readyText.style.color = '#fbbf24';
+      }
+    }
+
+    function drawUfo(now) {
+      if (!activeUfo) return;
+      const elapsed = now - activeUfo.startTime;
+      if (elapsed > activeUfo.duration) {
+        activeUfo = null;
+        return;
+      }
+
+      // Phases: 0~1000ms: Fly in, 1000~2300ms: Hover & Scan beam, 2300~3200ms: Warp away!
+      let ufoX, ufoY, beamAlpha = 0, scale = 1.0;
+
+      if (elapsed < 1000) {
+        const t = elapsed / 1000;
+        const ease = 1 - Math.pow(1 - t, 3);
+        ufoX = activeUfo.startX + (activeUfo.targetX - activeUfo.startX) * ease;
+        ufoY = activeUfo.startY + (activeUfo.targetY - activeUfo.startY) * ease;
+      } else if (elapsed < 2300) {
+        ufoX = activeUfo.targetX + Math.sin(elapsed * 0.008) * 8;
+        ufoY = activeUfo.targetY + Math.cos(elapsed * 0.006) * 4;
+        beamAlpha = Math.sin((elapsed - 1000) / 1300 * Math.PI) * 0.65;
+      } else {
+        const t = (elapsed - 2300) / 900;
+        const ease = t * t * t;
+        const exitX = activeUfo.targetX > canvas.width / 2 ? canvas.width + 120 : -120;
+        ufoX = activeUfo.targetX + (exitX - activeUfo.targetX) * ease;
+        ufoY = activeUfo.targetY - 140 * ease;
+        scale = 1 + ease * 0.8;
+      }
+
+      // Draw Tractor Beam during hover
+      if (beamAlpha > 0.05) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(ufoX - 10, ufoY + 10);
+        ctx.lineTo(ufoX + 10, ufoY + 10);
+        ctx.lineTo(activeUfo.targetX + 35, activeUfo.targetY + 50);
+        ctx.lineTo(activeUfo.targetX - 35, activeUfo.targetY + 50);
+        ctx.closePath();
+        const beamGrad = ctx.createLinearGradient(ufoX, ufoY, ufoX, activeUfo.targetY + 50);
+        beamGrad.addColorStop(0, `rgba(0, 240, 255, ${beamAlpha})`);
+        beamGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+        ctx.fillStyle = beamGrad;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Draw UFO Saucer
+      ctx.save();
+      ctx.translate(ufoX, ufoY);
+      ctx.scale(scale, scale);
+
+      // Glass Dome
+      ctx.beginPath();
+      ctx.arc(0, -5, 12, Math.PI, 0);
+      ctx.fillStyle = 'rgba(167, 243, 208, 0.9)';
+      ctx.fill();
+
+      // Cute Alien Head
+      ctx.beginPath();
+      ctx.arc(0, -6, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#22c55e';
+      ctx.fill();
+      // Eyes
+      ctx.fillStyle = '#000';
+      ctx.fillRect(-3, -7, 1.5, 2);
+      ctx.fillRect(1.5, -7, 1.5, 2);
+
+      // Metal Saucer Body
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 28, 9, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fill();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Glowing Saucer Lights
+      const lightPhase = Math.floor(now * 0.01) % 4;
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath();
+        ctx.arc(i * 10, 3, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = (i + 2 === lightPhase) ? '#fbbf24' : '#00f0ff';
+        ctx.fill();
+      }
+
+      // Speech bubble during hover
+      if (elapsed >= 1000 && elapsed <= 2300) {
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.strokeStyle = '#c084fc';
+        ctx.lineWidth = 1.5;
+        const msgW = 190;
+        const msgH = 26;
+        ctx.beginPath();
+        ctx.roundRect(-msgW / 2, -38, msgW, msgH, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#f3e8ff';
+        ctx.font = 'bold 11px Pretendard';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(activeUfo.sayText, 0, -25);
+      }
+
+      ctx.restore();
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('ufoToast');
+      toast.textContent = text;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    // --- Balloon Rendering & Calculation ---
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      initBackgroundSpace();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function getBalloonCenter() {
+      const cw = canvas.width;
+      const ch = canvas.height;
+      if (observer === 'center') {
+        return { cx: cw / 2, cy: ch / 2 - 10 };
+      }
+      const target = stickers.find(s => s.id === observer);
+      if (!target) return { cx: cw / 2, cy: ch / 2 - 10 };
+
+      const currentR = baseRadius * balloonScale;
+      const offsetX = Math.cos(target.angle) * (target.rRatio * currentR);
+      const offsetY = Math.sin(target.angle) * (target.rRatio * currentR);
+      const fixedScreenPos = { x: cw / 2 - 50, y: ch / 2 };
+      return {
+        cx: fixedScreenPos.x - offsetX,
+        cy: fixedScreenPos.y - offsetY
+      };
+    }
+
+    function getStickerScreenPos(sticker) {
+      const { cx, cy } = getBalloonCenter();
+      const currentR = baseRadius * balloonScale;
+      const sx = cx + Math.cos(sticker.angle) * (sticker.rRatio * currentR);
+      const sy = cy + Math.sin(sticker.angle) * (sticker.rRatio * currentR);
+      return { x: sx, y: sy };
+    }
+
+    // Arc Distance on Sphere Surface
+    function calculateArcDistance(s1, s2) {
+      const currentR = baseRadius * balloonScale;
+      const p1x = Math.cos(s1.angle) * s1.rRatio;
+      const p1y = Math.sin(s1.angle) * s1.rRatio;
+      const p1z = Math.sqrt(Math.max(0, 1 - (p1x*p1x + p1y*p1y)));
+
+      const p2x = Math.cos(s2.angle) * s2.rRatio;
+      const p2y = Math.sin(s2.angle) * s2.rRatio;
+      const p2z = Math.sqrt(Math.max(0, 1 - (p2x*p2x + p2y*p2y)));
+
+      const dot = p1x*p2x + p1y*p2y + p1z*p2z;
+      const clampedDot = Math.min(1, Math.max(-1, dot));
+      const angularDistance = Math.acos(clampedDot);
+
+      const arcLengthPixels = currentR * angularDistance;
+      const cmVal = (arcLengthPixels * 0.048).toFixed(1);
+      return parseFloat(cmVal);
+    }
+
+    // Animation Loop
+    function mainLoop(now) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 1. Draw Expanding Background Universe
+      updateAndDrawBackground(canvas.width, canvas.height);
+
+      const { cx, cy } = getBalloonCenter();
+      const currentR = baseRadius * balloonScale;
+
+      // 2. Draw Balloon Knot (매듭)
+      const knotY = cy + currentR * 1.05;
+      ctx.beginPath();
+      ctx.moveTo(cx - 14 * balloonScale, knotY);
+      ctx.lineTo(cx + 14 * balloonScale, knotY);
+      ctx.lineTo(cx + 18 * balloonScale, knotY + 16 * balloonScale);
+      ctx.lineTo(cx - 18 * balloonScale, knotY + 16 * balloonScale);
+      ctx.closePath();
+      ctx.fillStyle = '#be123c';
+      ctx.fill();
+
+      // String
+      ctx.beginPath();
+      ctx.moveTo(cx, knotY + 16 * balloonScale);
+      ctx.bezierCurveTo(cx - 12, knotY + 45, cx + 22, knotY + 80, cx - 8, knotY + 120);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 3. Draw 3D Shaded Balloon Body
+      const grad = ctx.createRadialGradient(
+        cx - currentR * 0.35, cy - currentR * 0.35, currentR * 0.1,
+        cx, cy, currentR * 1.08
+      );
+      grad.addColorStop(0, '#fda4af');
+      grad.addColorStop(0.3, '#f43f5e');
+      grad.addColorStop(0.75, '#e11d48');
+      grad.addColorStop(1, '#881337');
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, currentR * 0.98, currentR * 1.05, 0, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.shadowColor = 'rgba(244, 63, 94, 0.4)';
+      ctx.shadowBlur = 30 * balloonScale;
+      ctx.fill();
+      ctx.restore();
+
+      // Specular highlight
+      ctx.beginPath();
+      ctx.ellipse(cx - currentR * 0.42, cy - currentR * 0.42, currentR * 0.22, currentR * 0.14, -Math.PI / 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.32)';
+      ctx.fill();
+
+      // Surface coordinates grid for depth perception
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1.5;
+      for (let f = 0.35; f <= 0.85; f += 0.25) {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, currentR * 0.98 * f, currentR * 1.05, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // 4. Draw ALL 3 PAIRS Distance Measurement Lines
+      const posA = getStickerScreenPos(stickers[0]);
+      const posB = getStickerScreenPos(stickers[1]);
+      const posC = getStickerScreenPos(stickers[2]);
+
+      const distAB = calculateArcDistance(stickers[0], stickers[1]);
+      const distBC = calculateArcDistance(stickers[1], stickers[2]);
+      const distAC = calculateArcDistance(stickers[0], stickers[2]);
+
+      // Pair 1: (가)-(나) [황금빛]
+      drawMeasureLine(posA, posB, distAB, '#fbbf24', '① (가)-(나)');
+      // Pair 2: (나)-(다) [초록/에메랄드]
+      drawMeasureLine(posB, posC, distBC, '#34d399', '② (나)-(다)');
+      // Pair 3: (가)-(다) [하늘빛]
+      drawMeasureLine(posA, posC, distAC, '#38bdf8', '③ (가)-(다)');
+
+      // 5. Draw 3 Stickers
+      stickers.forEach(s => {
+        const pos = getStickerScreenPos(s);
+        drawSticker(pos.x, pos.y, s);
+      });
+
+      // Observer banner
+      if (observer !== 'center') {
+        const target = stickers.find(st => st.id === observer);
+        const tPos = getStickerScreenPos(target);
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.95)';
+        ctx.font = 'bold 12px Pretendard';
+        ctx.textAlign = 'center';
+        ctx.fillText(`👀 관측자 기준: [${target.name} 은하]`, tPos.x, tPos.y - 30);
+        ctx.restore();
+      }
+
+      // 6. Draw UFO & Check Cooldown UI
+      drawUfo(now);
+      updateUfoCooldownUI();
+
+      requestAnimationFrame(mainLoop);
+    }
+
+    // Ruler/Distance curve drawer
+    function drawMeasureLine(p1, p2, distanceCm, color, tag) {
+      ctx.save();
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.2;
+
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const midX = (p1.x + p2.x) / 2;
+      const midY = (p1.y + p2.y) / 2;
+
+      // Distance Badge at midpoint
+      ctx.fillStyle = 'rgba(8, 12, 22, 0.88)';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      
+      const badgeW = 74;
+      const badgeH = 22;
+      ctx.beginPath();
+      ctx.roundRect(midX - badgeW/2, midY - badgeH/2, badgeW, badgeH, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 11px Outfit, Pretendard, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${distanceCm} cm`, midX, midY);
+
+      ctx.restore();
+    }
+
+    function drawSticker(x, y, sticker) {
+      const radius = 18;
+      const isObs = (sticker.id === observer);
+
+      ctx.save();
+      // Outer ring
+      ctx.beginPath();
+      ctx.arc(x, y, radius + 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = isObs ? 'rgba(0, 240, 255, 0.85)' : 'rgba(255, 255, 255, 0.8)';
+      ctx.fill();
+
+      // Sticker body
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = sticker.color;
+      ctx.fill();
+
+      // Miniature galaxy spiral pattern inside
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(x, y, radius * 0.52, 0, Math.PI * 1.5);
+      ctx.stroke();
+
+      // Label text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 13px Pretendard, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(sticker.name, x, y);
+
+      ctx.restore();
+    }
+
+    // Update real-time measurements in the table for ALL 3 PAIRS
+    function updateMeasurements() {
+      const curAB = calculateArcDistance(stickers[0], stickers[1]);
+      const curBC = calculateArcDistance(stickers[1], stickers[2]);
+      const curAC = calculateArcDistance(stickers[0], stickers[2]);
+
+      const stateBadge = document.getElementById('stateBadge');
+      const distAB_small = document.getElementById('distAB_small');
+      const distBC_small = document.getElementById('distBC_small');
+      const distAC_small = document.getElementById('distAC_small');
+
+      const distAB_big = document.getElementById('distAB_big');
+      const distBC_big = document.getElementById('distBC_big');
+      const distAC_big = document.getElementById('distAC_big');
+
+      const diffAB = document.getElementById('diffAB');
+      const diffBC = document.getElementById('diffBC');
+      const diffAC = document.getElementById('diffAC');
+
+      if (balloonScale <= 1.05) {
+        stateBadge.textContent = '풍선 작을 때 (초기)';
+        stateBadge.style.color = '#38bdf8';
+        recordedSmall.AB = curAB;
+        recordedSmall.BC = curBC;
+        recordedSmall.AC = curAC;
+
+        distAB_small.textContent = `${curAB} cm`;
+        distBC_small.textContent = `${curBC} cm`;
+        distAC_small.textContent = `${curAC} cm`;
+
+        distAB_big.textContent = '-';
+        distBC_big.textContent = '-';
+        distAC_big.textContent = '-';
+
+        diffAB.innerHTML = '<span class="diff-badge">-</span>';
+        diffBC.innerHTML = '<span class="diff-badge">-</span>';
+        diffAC.innerHTML = '<span class="diff-badge">-</span>';
+      } else {
+        stateBadge.textContent = `풍선 클 때 (${balloonScale.toFixed(2)}배 팽창)`;
+        stateBadge.style.color = '#f43f5e';
+
+        distAB_big.textContent = `${curAB} cm`;
+        distBC_big.textContent = `${curBC} cm`;
+        distAC_big.textContent = `${curAC} cm`;
+
+        const dAB = (curAB - (recordedSmall.AB || curAB)).toFixed(1);
+        const dBC = (curBC - (recordedSmall.BC || curBC)).toFixed(1);
+        const dAC = (curAC - (recordedSmall.AC || curAC)).toFixed(1);
+
+        diffAB.innerHTML = `<span class="diff-badge">+${dAB} cm</span>`;
+        diffBC.innerHTML = `<span class="diff-badge">+${dBC} cm</span>`;
+        diffAC.innerHTML = `<span class="diff-badge" style="background:rgba(244,63,94,0.18); color:#fb7185; border-color:rgba(244,63,94,0.35);">+${dAC} cm (최대 증가!)</span>`;
+      }
+    }
+
+    // --- Slider & Step Controls ---
+    const slider = document.getElementById('radiusSlider');
+    const radiusVal = document.getElementById('radiusVal');
+
+    slider.addEventListener('input', (e) => {
+      balloonScale = parseFloat(e.target.value);
+      radiusVal.textContent = `${balloonScale.toFixed(2)}x`;
+      updateStepButtons();
+      updateMeasurements();
+    });
+
+    function setStep(step) {
+      if (step === 'small') {
+        animateBalloonScale(1.0);
+      } else {
+        animateBalloonScale(2.0);
+      }
+    }
+
+    function animateBalloonScale(target) {
+      const start = balloonScale;
+      const duration = 550;
+      const startTime = performance.now();
+
+      function stepAnim(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(1, elapsed / duration);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        balloonScale = start + (target - start) * ease;
+        slider.value = balloonScale;
+        radiusVal.textContent = `${balloonScale.toFixed(2)}x`;
+        updateStepButtons();
+        updateMeasurements();
+
+        if (progress < 1) {
+          requestAnimationFrame(stepAnim);
+        }
+      }
+      requestAnimationFrame(stepAnim);
+    }
+
+    function updateStepButtons() {
+      const stepSmallBtn = document.getElementById('stepSmallBtn');
+      const stepBigBtn = document.getElementById('stepBigBtn');
+      if (balloonScale < 1.4) {
+        stepSmallBtn.classList.add('active-step');
+        stepBigBtn.classList.remove('active-step');
+      } else {
+        stepSmallBtn.classList.remove('active-step');
+        stepBigBtn.classList.add('active-step');
+      }
+    }
+
+    function changeObserver(obs) {
+      observer = obs;
+      ['viewCenterBtn', 'viewABtn', 'viewBBtn', 'viewCBtn'].forEach(id => {
+        document.getElementById(id).classList.remove('active');
+      });
+      if (obs === 'center') document.getElementById('viewCenterBtn').classList.add('active');
+      if (obs === 'A') document.getElementById('viewABtn').classList.add('active');
+      if (obs === 'B') document.getElementById('viewBBtn').classList.add('active');
+      if (obs === 'C') document.getElementById('viewCBtn').classList.add('active');
+    }
+
+    function resetSimulation() {
+      stickers[0] = { id: 'A', name: '(가)', color: '#ef4444', angle: -2.35, rRatio: 0.65 };
+      stickers[1] = { id: 'B', name: '(나)', color: '#eab308', angle: -1.35, rRatio: 0.55 };
+      stickers[2] = { id: 'C', name: '(다)', color: '#3b82f6', angle: 0.85, rRatio: 0.78 };
+      setStep('small');
+      changeObserver('center');
+      initBackgroundSpace();
+    }
+
+    // --- Tablet Touch / Pointer / UFO interaction ---
+    function getPointerPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    let touchStartTime = 0;
+    let touchStartPos = { x: 0, y: 0 };
+
+    function handleStart(e) {
+      const pos = getPointerPos(e);
+      touchStartTime = performance.now();
+      touchStartPos = pos;
+
+      for (let s of stickers) {
+        const sPos = getStickerScreenPos(s);
+        const dist = Math.hypot(pos.x - sPos.x, pos.y - sPos.y);
+        if (dist <= 30) {
+          draggedSticker = s;
+          isDragging = true;
+          break;
+        }
+      }
+    }
+
+    function handleMove(e) {
+      if (!isDragging || !draggedSticker) return;
+      const pos = getPointerPos(e);
+      const { cx, cy } = getBalloonCenter();
+      const currentR = baseRadius * balloonScale;
+
+      const dx = pos.x - cx;
+      const dy = pos.y - cy;
+      const angle = Math.atan2(dy, dx);
+      const distFromCenter = Math.hypot(dx, dy);
+
+      const rRatio = Math.min(0.85, Math.max(0.12, distFromCenter / currentR));
+      draggedSticker.angle = angle;
+      draggedSticker.rRatio = rRatio;
+
+      updateMeasurements();
+    }
+
+    function handleEnd(e) {
+      const duration = performance.now() - touchStartTime;
+      const moved = Math.hypot(touchStartPos.x - (e.clientX || touchStartPos.x), touchStartPos.y - (e.clientY || touchStartPos.y));
+
+      // If it was a quick tap/click (< 350ms) -> Trigger UFO at this focus position!
+      if (duration < 350 && moved < 25) {
+        // Check if tapped near a sticker or general balloon area
+        let hitSticker = null;
+        for (let s of stickers) {
+          const sPos = getStickerScreenPos(s);
+          if (Math.hypot(touchStartPos.x - sPos.x, touchStartPos.y - sPos.y) <= 45) {
+            hitSticker = s;
+            break;
+          }
+        }
+        if (hitSticker) {
+          const sPos = getStickerScreenPos(hitSticker);
+          triggerUfoAt(sPos.x, sPos.y, hitSticker.name);
+        } else {
+          // If tapped elsewhere on canvas
+          triggerUfoAt(touchStartPos.x, touchStartPos.y, '탐사');
+        }
+      }
+
+      isDragging = false;
+      draggedSticker = null;
+    }
+
+    canvas.addEventListener('mousedown', handleStart);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+
+    canvas.addEventListener('touchstart', handleStart, { passive: true });
+    window.addEventListener('touchmove', handleMove, { passive: true });
+    window.addEventListener('touchend', handleEnd);
+
+    // Initial setup
+    resizeCanvas();
+    updateMeasurements();
+    requestAnimationFrame(mainLoop);
+  </script>
+</body>
+</html>
